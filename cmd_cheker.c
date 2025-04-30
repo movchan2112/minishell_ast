@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-int cmd_checker(char *cmd)
+int buildin_checker(char *cmd)
 {
     if(!cmd)
         return 0;
@@ -9,10 +9,8 @@ int cmd_checker(char *cmd)
     while (i < 4) // <----------here
     {
         if(ft_strcmp(cmd, argc1[i]) == 0)
-            return(0);
+            return(1);
         i++;
     }
-    
-
-    return(-1);
+    return(0);
 }

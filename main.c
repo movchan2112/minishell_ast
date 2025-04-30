@@ -1,4 +1,6 @@
 #include "minishell.h"
+int g_exit_status;
+
 
 t_ast *create_ast_node(t_node_type type)
 {
@@ -17,31 +19,45 @@ void label_tokens(t_token *tokens)
 	while (tokens)
 	{
 		if (strcmp(tokens->value, "|") == 0)
-			tokens->type = "PIPE";
+			tokens->type = TOKEN_PIPE;
 		else if (strcmp(tokens->value, "<") == 0)
-			tokens->type = "REDIR_IN";
+			tokens->type = TOKEN_REDIR_IN;
 		else if (strcmp(tokens->value, ">") == 0)
-			tokens->type = "REDIR_OUT";
+			tokens->type = TOKEN_REDIR_OUT;
 		else if (strcmp(tokens->value, ">>") == 0)
-			tokens->type = "REDIR_APPEND";
+			tokens->type = TOKEN_REDIR_APPEND;
 		else if (strcmp(tokens->value, "<<") == 0)
-			tokens->type = "HEREDOC";
+			tokens->type = TOKEN_HEREDOC;
 		else if (strcmp(tokens->value, ";") == 0)
-			tokens->type = "SEMI";
+			tokens->type = TOKEN_SEMI;
 		else
-			tokens->type = "WORD";
+			tokens->type = TOKEN_WORD;
 		tokens = tokens->next;
 	}
 }
 void print_tokens(t_token *tokens)
 {
-    printf("Tokens list:\n");
-    while (tokens)
-    {
-        printf("Value: %-10s | Type: %s\n", tokens->value, tokens->type);
-        tokens = tokens->next;
-    }
+	char *token_type_str[] = {
+		"TOKEN_PIPE",
+		"TOKEN_REDIR_IN",
+		"TOKEN_REDIR_OUT",
+		"TOKEN_REDIR_APPEND",
+		"TOKEN_HEREDOC",
+		"TOKEN_WORD",
+		"TOKEN_SEMI"
+	};
+
+	printf("Tokens list:\n");
+	while (tokens)
+	{
+		if (tokens->type >= 0 && tokens->type <= TOKEN_SEMI)
+			printf("Value: %-10s | Type: %s\n", tokens->value, token_type_str[tokens->type]);
+		else
+			printf("Value: %-10s | Type: UNKNOWN\n", tokens->value);
+		tokens = tokens->next;
+	}
 }
+
 t_ast *create_cmd_node(char *cmd, char **args)
 {
 	t_ast *node = create_ast_node(NODE_CMD);
@@ -62,7 +78,7 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 	// 1. Найти пайп
 	while (current && current != end)
 	{
-		if (strcmp(current->type, "PIPE") == 0)
+		if (current->type == TOKEN_PIPE)
 		{
 			t_ast *pipe_node = create_ast_node(NODE_PIPE);
 			pipe_node->left = build_ast_from_tokens(start, current);       // всё до пайпа
@@ -76,7 +92,7 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 	current = start;
 	while (current && current != end)
 	{
-		if (strcmp(current->type, "REDIR_OUT") == 0)
+		if (current->type == TOKEN_REDIR_OUT)
 		{
 			t_ast *redir_node = create_ast_node(NODE_REDIR_OUT);
 			redir_node->left = build_ast_from_tokens(start, current); // команда слева
@@ -100,7 +116,7 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 		current = start;
 		while (current && current != end)
 		{
-			if (strcmp(current->type, "WORD") == 0)
+			if (current->type == TOKEN_WORD)
 				count++;
 			current = current->next;
 		}
@@ -110,7 +126,7 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 		int i = 0;
 		while (current && current != end)
 		{
-			if (strcmp(current->type, "WORD") == 0)
+			if (current->type == TOKEN_WORD)
 				args[i++] = current->value;
 			current = current->next;
 		}
@@ -173,11 +189,54 @@ void print_ast(t_ast *node, int level)
 	print_ast(node->right, level + 1);
 }
 
+void	ft_putstr(const char *s)
+{
+	if (!s)
+		return;
+	while (*s)
+		write(1, s++, 1);
+}
+
+
+int ft_echo(t_cmd *cmd)
+{
+	int n = 1;
+
+	while (cmd->args[n])
+	{
+		ft_putstr(cmd->args[n]);
+		if (cmd->args[n + 1])
+			ft_putstr(" ");
+		n++;
+	}
+	ft_putstr("\n");
+	g_exit_status = 0;
+	return 0;
+}
+
+int exec_tree(t_ast *tree)
+{
+	int pid = 0;
+	// if(tree->type == NODE_PIPE)
+	// {
+	// 	pid = fork();
+	// 	exec_tree(tree->left);
+	// 	exec_tree(tree->right);
+	// }
+	if(tree->type == NODE_CMD)
+	{
+		if(buildin_checker(tree->cmd->cmd))
+			ft_echo(tree->cmd);
+	}
+	return 0;
+}
+
 
 int main(int ac, char **av, char **envp)
 {
 	char *line;
 	t_token *token = NULL;
+	g_exit_status = 0;
 	while (1)
 	{
 		line = readline("minishell$ ");
@@ -189,10 +248,10 @@ int main(int ac, char **av, char **envp)
 		if(token)
 		{
 			label_tokens(token);
-			// print_tokens(token);
+			t_ast *tree = build_ast_from_tokens(token, NULL);
+			print_ast(tree, 0);
+			exec_tree(tree);
 		}
-		t_ast *tree = build_ast_from_tokens(token, NULL);
-		print_ast(tree, 0);
 		add_history(line);
 		free(line);	
 	}

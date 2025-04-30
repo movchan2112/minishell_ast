@@ -22,7 +22,6 @@ int	ft_flag(const char *line, int pos)
 	return (0);
 }
 
-
 void print_env_list(t_env *env)
 {
     while (env)
@@ -39,7 +38,7 @@ t_token *init_token(const char *value)
 	if (!new)
 		return NULL;
 	new->value = strdup(value);
-	new->type = NULL;
+	new->type = -1;
 	if (!new->value)
 	{
 		free(new);
@@ -72,12 +71,110 @@ int is_two_char_operator(const char *line, int i)
 	return ((line[i] == '<' && line[i + 1] == '<') ||
 			(line[i] == '>' && line[i + 1] == '>'));
 }
+
+char *str_append(const char *s1, const char *s2, int add_newline)
+{
+	char *result;
+	size_t len1 = strlen(s1);
+	size_t len2 = strlen(s2);
+	size_t total = len1 + len2 + (add_newline ? 1 : 0) + 1;
+
+	result = malloc(total);
+	if (!result)
+		return NULL;
+
+	strcpy(result, s1);
+	if (add_newline)
+	{
+		result[len1] = '\n';
+		strcpy(result + len1 + 1, s2);
+	}
+	else
+	{
+		strcpy(result + len1, s2);
+	}
+	return result;
+}
+
+char *read_q(char *line)
+{
+	char *next_line;
+	char *combined = strdup(line);  // start with a copy of the original
+	if (!combined)
+		return NULL;
+
+	while (ft_flag(combined, strlen(combined)))
+	{
+		next_line = readline("quotes$ ");
+		if (!next_line)
+			break;
+
+		char *tmp = str_append(combined, next_line, 0); // add newline
+		free(combined);
+		free(next_line);
+		combined = tmp;
+		if (!combined)
+			break;
+	}
+	return combined;
+}
+
+char *ft_substr(const char *s, unsigned int start, size_t len)
+{
+	size_t	i;
+	size_t	s_len;
+	char	*sub;
+
+	if (!s)
+		return (NULL);
+
+	s_len = 0;
+	while (s[s_len])
+		s_len++;
+
+	if (start >= s_len)
+		return (strdup(""));  // empty string if start is past end
+
+	if (len > s_len - start)
+		len = s_len - start;
+
+	sub = malloc(sizeof(char) * (len + 1));
+	if (!sub)
+		return (NULL);
+
+	i = 0;
+	while (i < len && s[start + i])
+	{
+		sub[i] = s[start + i];
+		i++;
+	}
+	sub[i] = '\0';
+	return (sub);
+}
+
+char *strip_quotes(const char *s)
+{
+	size_t len = ft_strlen(s);
+
+	if (len >= 2 && 
+	   ((s[0] == '"' && s[len - 1] == '"') ||
+		(s[0] == '\'' && s[len - 1] == '\'')))
+	{
+		return ft_substr(s, 1, len - 2); // remove both ends
+	}
+	return ft_strdup(s); // return as is
+}
+
+
+
 t_token *parse_line(char *line)
 {
 	int i = 0;
 	int start = 0;
 	int in_token = 0;
 	t_token *token_list = NULL;
+	if(ft_flag(line, strlen(line)))
+		line = read_q(line);
 
 	while (line[i])
 	{
@@ -134,7 +231,6 @@ t_token *parse_line(char *line)
 		}
 		else if (in_token == 0 && line[i] != ' ')
 		{
-			// inside quotes: new token
 			in_token = 1;
 			start = i;
 		}
@@ -149,14 +245,5 @@ t_token *parse_line(char *line)
 			add_token_back(&token_list, init_token(new_token));
 		free(new_token);
 	}
-
-	// // Debug output
-	// t_token *tmp = token_list;
-	// while (tmp)
-	// {
-	// 	printf("TOKEN: [%s]\n", tmp->value);
-	// 	tmp = tmp->next;
-	// }
-
 	return token_list;
 }

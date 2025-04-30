@@ -3,14 +3,27 @@
 
 #include <stdio.h>
 #include <stdlib.h>
+#include <unistd.h>
 #include <readline/readline.h>
 #include <readline/history.h>
 
+typedef enum e_token_type {
+	TOKEN_PIPE,
+	TOKEN_REDIR_IN,
+	TOKEN_REDIR_OUT,
+	TOKEN_REDIR_APPEND,
+	TOKEN_HEREDOC,
+	TOKEN_WORD,
+	TOKEN_SEMI
+}t_token_type;
+
+
 typedef struct s_token {
 	char *value;
-	const char *type;
+	t_token_type type;
 	struct s_token *next;
 } t_token;
+
 
 typedef enum e_node_type
 {
@@ -60,7 +73,7 @@ char 		*get_env_value(t_env *env, const char *key);
 
 int			ft_flag(const char *line, int pos);
 int 		ft_strcmp(const char *s1, const char *s2);
-int 		cmd_checker(char *cmd);
+int 		buildin_checker(char *cmd);
 
 
 #endif
