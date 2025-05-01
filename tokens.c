@@ -109,7 +109,7 @@ char *read_q(char *line)
 		if (!next_line)
 			break;
 
-		char *tmp = str_append(combined, next_line, 0); // add newline
+		char *tmp = str_append(combined, next_line, 1); // add newline
 		free(combined);
 		free(next_line);
 		combined = tmp;
@@ -152,9 +152,9 @@ char *ft_substr(const char *s, unsigned int start, size_t len)
 	return (sub);
 }
 
-char *strip_quotes(const char *s)
+char *strip_quotes(char *s)
 {
-	size_t len = ft_strlen(s);
+	size_t len = strlen(s);
 
 	if (len >= 2 && 
 	   ((s[0] == '"' && s[len - 1] == '"') ||
@@ -162,10 +162,18 @@ char *strip_quotes(const char *s)
 	{
 		return ft_substr(s, 1, len - 2); // remove both ends
 	}
-	return ft_strdup(s); // return as is
+	return s; // return as is
 }
 
-
+int check_and_add_token(t_token **token_list, char *line, int start, int i)
+{
+    char *raw_token = ft_strndup(line + start, i - start);
+    char *clean_token = strip_quotes(raw_token);
+    if (clean_token)
+        add_token_back(token_list, init_token(clean_token));
+    free(raw_token);
+    return 0; // this will change in_token to 0
+}
 
 t_token *parse_line(char *line)
 {
@@ -173,9 +181,6 @@ t_token *parse_line(char *line)
 	int start = 0;
 	int in_token = 0;
 	t_token *token_list = NULL;
-	if(ft_flag(line, strlen(line)))
-		line = read_q(line);
-
 	while (line[i])
 	{
 		if (ft_flag(line, i) == 0) // only care about special stuff outside quotes
@@ -184,13 +189,7 @@ t_token *parse_line(char *line)
 			if (is_two_char_operator(line, i))
 			{
 				if (in_token)
-				{
-					char *new_token = ft_strndup(line + start, i - start);
-					if (new_token)
-						add_token_back(&token_list, init_token(new_token));
-					free(new_token);
-					in_token = 0;
-				}
+					in_token = check_and_add_token(&token_list, line, start, i);
 				char *op = ft_strndup(line + i, 2);
 				add_token_back(&token_list, init_token(op));
 				free(op);
@@ -201,13 +200,7 @@ t_token *parse_line(char *line)
 			else if (is_special_symbol(line[i]))
 			{
 				if (in_token)
-				{
-					char *new_token = ft_strndup(line + start, i - start);
-					if (new_token)
-						add_token_back(&token_list, init_token(new_token));
-					free(new_token);
-					in_token = 0;
-				}
+					in_token = check_and_add_token(&token_list, line, start, i);
 				char *op = ft_strndup(line + i, 1);
 				add_token_back(&token_list, init_token(op));
 				free(op);
@@ -216,13 +209,8 @@ t_token *parse_line(char *line)
 			}
 			// space ends token
 			else if (line[i] == ' ' && in_token)
-			{
-				char *new_token = ft_strndup(line + start, i - start);
-				if (new_token)
-					add_token_back(&token_list, init_token(new_token));
-				free(new_token);
-				in_token = 0;
-			}
+					in_token = check_and_add_token(&token_list, line, start, i);
+
 			else if (line[i] != ' ' && in_token == 0)
 			{
 				in_token = 1;
@@ -239,11 +227,6 @@ t_token *parse_line(char *line)
 
 	// Final token at end of line
 	if (in_token)
-	{
-		char *new_token = ft_strndup(line + start, i - start);
-		if (new_token)
-			add_token_back(&token_list, init_token(new_token));
-		free(new_token);
-	}
+		in_token = check_and_add_token(&token_list, line, start, i);
 	return token_list;
 }

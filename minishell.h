@@ -7,6 +7,8 @@
 #include <readline/readline.h>
 #include <readline/history.h>
 
+// int g_exit_status;
+
 typedef enum e_token_type {
 	TOKEN_PIPE,
 	TOKEN_REDIR_IN,
@@ -60,20 +62,39 @@ typedef struct s_env
     struct s_env *next;
 }t_env;
 
+typedef struct s_shell
+{
+	t_token *tokens;
+	t_ast   *ast;
+	t_env   *env;
+	// int    exit_status;
+	// char  *input_line;
+	// int    is_running;
+} t_shell;
+
 
 t_token 	*parse_line(char *line);
 t_token 	*init_token(const char *value);
 t_env 		*init_env(char **line);
 
+void		free_token_list(t_token *token);
+void		free_ast(t_ast *node);
 void 		add_token_back(t_token **head, t_token *new);
 
-char 		*ft_strndup(const char *s, size_t n);
-char		*ft_strchr(const char *s, int c);
 char 		*get_env_value(t_env *env, const char *key);
 
 int			ft_flag(const char *line, int pos);
 int 		ft_strcmp(const char *s1, const char *s2);
 int 		buildin_checker(char *cmd);
 
-
+//standart
+void		ft_putstr(const char *s);
+char		*ft_strdup(const char *s);
+char 		*ft_strndup(const char *s, size_t n);
+char		*ft_strchr(const char *s, int c);
+char 		*read_q(char *line);
+//build-in
+void 		find_buildin(t_shell *shell);
+void    	ft_env(t_shell *shell);
+int 		ft_echo(t_cmd *cmd);
 #endif

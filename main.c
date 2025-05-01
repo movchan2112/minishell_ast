@@ -1,6 +1,4 @@
 #include "minishell.h"
-int g_exit_status;
-
 
 t_ast *create_ast_node(t_node_type type)
 {
@@ -100,7 +98,7 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 			if (current->next)
 			{
 				redir_node->cmd = malloc(sizeof(t_cmd));
-				redir_node->cmd->outfile = current->next->value; // имя файла
+				redir_node->cmd->outfile = ft_strdup(current->next->value);; // имя файла
 				redir_node->cmd->append = 0;
 			}
 			return redir_node;
@@ -127,12 +125,13 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 		while (current && current != end)
 		{
 			if (current->type == TOKEN_WORD)
-				args[i++] = current->value;
+				args[i++] = ft_strdup(current->value);
+				;
 			current = current->next;
 		}
 		args[i] = NULL;
 
-		return create_cmd_node(args[0], args);
+		return create_cmd_node(ft_strdup(args[0]), args);
 	}
 
 	return NULL;
@@ -198,23 +197,7 @@ void	ft_putstr(const char *s)
 }
 
 
-int ft_echo(t_cmd *cmd)
-{
-	int n = 1;
-
-	while (cmd->args[n])
-	{
-		ft_putstr(cmd->args[n]);
-		if (cmd->args[n + 1])
-			ft_putstr(" ");
-		n++;
-	}
-	ft_putstr("\n");
-	g_exit_status = 0;
-	return 0;
-}
-
-int exec_tree(t_ast *tree)
+int exec_tree(t_shell *shell)
 {
 	int pid = 0;
 	// if(tree->type == NODE_PIPE)
@@ -223,10 +206,10 @@ int exec_tree(t_ast *tree)
 	// 	exec_tree(tree->left);
 	// 	exec_tree(tree->right);
 	// }
-	if(tree->type == NODE_CMD)
+	if(shell->ast->type == NODE_CMD)
 	{
-		if(buildin_checker(tree->cmd->cmd))
-			ft_echo(tree->cmd);
+		if(buildin_checker(shell->ast->cmd->cmd))
+			find_buildin(shell);
 	}
 	return 0;
 }
@@ -234,28 +217,34 @@ int exec_tree(t_ast *tree)
 
 int main(int ac, char **av, char **envp)
 {
-	char *line;
+	char *line = NULL;
 	t_token *token = NULL;
-	g_exit_status = 0;
+	t_env *env = NULL;
+	// g_exit_status = 0;
+	t_shell shell;
+
+	shell.env = init_env(envp);
 	while (1)
 	{
-		line = readline("minishell$ ");
-		if(!line)
+		char *line = readline("minishell$ ");
+		if (!line)
 			break;
-		
-		if(*line)
-			token = parse_line(line);
-		if(token)
+		if(ft_flag(line, strlen(line)))
+			line = read_q(line);
+		if(line)
 		{
-			label_tokens(token);
-			t_ast *tree = build_ast_from_tokens(token, NULL);
-			print_ast(tree, 0);
-			exec_tree(tree);
+			shell.tokens = parse_line(line);
+			label_tokens(shell.tokens);
+			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
+			if(shell.ast)
+			{
+				exec_tree(&shell);
+				free_token_list(shell.tokens);
+				free_ast(shell.ast);
+			}
 		}
 		add_history(line);
 		free(line);	
 	}
-
-
 	return(0);
 }
