@@ -100,6 +100,10 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 				redir_node->cmd = malloc(sizeof(t_cmd));
 				redir_node->cmd->outfile = ft_strdup(current->next->value);; // имя файла
 				redir_node->cmd->append = 0;
+				redir_node->cmd->cmd = NULL;
+				redir_node->cmd->args = NULL;
+				redir_node->cmd->infile = NULL;
+				redir_node->cmd->heredoc = NULL;
 			}
 			return redir_node;
 		}
@@ -126,7 +130,6 @@ t_ast *build_ast_from_tokens(t_token *start, t_token *end)
 		{
 			if (current->type == TOKEN_WORD)
 				args[i++] = ft_strdup(current->value);
-				;
 			current = current->next;
 		}
 		args[i] = NULL;
@@ -197,7 +200,7 @@ void	ft_putstr(const char *s)
 }
 
 
-int exec_tree(t_shell *shell)
+int exec_tree(t_shell *shell,t_ast *ast)
 {
 	int pid = 0;
 	// if(tree->type == NODE_PIPE)
@@ -206,11 +209,42 @@ int exec_tree(t_shell *shell)
 	// 	exec_tree(tree->left);
 	// 	exec_tree(tree->right);
 	// }
-	if(shell->ast->type == NODE_CMD)
+	if (ast->type == NODE_REDIR_OUT)
 	{
-		if(buildin_checker(shell->ast->cmd->cmd))
-			find_buildin(shell);
+		int fd = open(ast->cmd->outfile, O_WRONLY | O_CREAT | O_TRUNC, 0644);
+		if (fd < 0)
+		{
+			perror("minishell: open");
+			// shell->exit_status = 1;
+			return 1;
+		}
+
+		int saved_stdout = dup(STDOUT_FILENO);
+		dup2(fd, STDOUT_FILENO);
+		close(fd);
+
+		// ✅ ИСПОЛНЯЕМ ТОЛЬКО ЛЕВЫЙ УЗЕЛ, ГДЕ НАСТОЯЩАЯ КОМАНДА
+		exec_tree(shell, ast->left);
+
+		dup2(saved_stdout, STDOUT_FILENO);
+		close(saved_stdout);
+		return 0;
 	}
+	else if (ast->type == NODE_CMD)
+	{
+		if (!ast->cmd || !ast->cmd->cmd)
+		{
+			fprintf(stderr, "minishell: invalid command in CMD\n");
+			// shell->exit_status = 1;
+			return 1;
+		}
+
+		if (buildin_checker(ast->cmd->cmd))
+			find_buildin(shell,ast->cmd);
+		// else
+		// 	exec_external(shell, ast->cmd); // если реализовано
+	}
+
 	return 0;
 }
 
@@ -226,6 +260,8 @@ int main(int ac, char **av, char **envp)
 	shell.env = init_env(envp);
 	while (1)
 	{
+		// if(get_env_value(shell.env,"HOME"))
+		// 	printf("%s : ", get_env_value(shell.env,"HOME"));
 		char *line = readline("minishell$ ");
 		if (!line)
 			break;
@@ -238,7 +274,14 @@ int main(int ac, char **av, char **envp)
 			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
 			if(shell.ast)
 			{
-				exec_tree(&shell);
+				// printf("== DEBUG: command = %s\n", shell.ast->cmd ? shell.ast->cmd->cmd : "NULL");
+				// if (shell.ast->cmd && shell.ast->cmd->args)
+				// {
+				// 	for (int i = 0; shell.ast->cmd->args[i]; i++)
+				// 		printf("arg[%d] = %s\n", i, shell.ast->cmd->args[i]);
+				// }
+
+				exec_tree(&shell, shell.ast);
 				free_token_list(shell.tokens);
 				free_ast(shell.ast);
 			}

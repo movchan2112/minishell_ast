@@ -23,13 +23,15 @@ int ft_echo(t_cmd *cmd)
 	return 0;
 }
 
-void    ft_env(t_shell *shell)
+void	ft_env(t_shell *shell)
 {
-    while (shell->env)
+	while (shell->env)
 	{
 		if (shell->env->val)
 			printf("%s=%s\n", shell->env->key, shell->env->val);
-            shell->env = shell->env->next;
+			shell->env = shell->env->next;
 	}
 }
+
+/// FOR CD
 

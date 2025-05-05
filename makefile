@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = 
+CFLAGS = -fsanitize=address -g
 LDFLAGS = -lreadline -lncurses
 
 SRCS = main.c my_strtok.c env.c cmd_cheker.c tokens.c cleaner.c build_in.c
@@ -7,8 +7,7 @@ OBJS = $(SRCS:.c=.o)
 NAME = minishell
 
 $(NAME): $(OBJS)
-	$(CC) $(OBJS) $(LDFLAGS) -o $(NAME)
-	rm -f $(OBJS)
+	$(CC) $(CFLAGS) $(OBJS) $(LDFLAGS) -o $(NAME)
 
 %.o: %.c
 	$(CC) $(CFLAGS) -c $< -o $@

@@ -14,13 +14,19 @@ int buildin_checker(char *cmd)
     }
     return(0);
 }
-void find_buildin(t_shell *shell)
+void find_buildin(t_shell *shell, t_cmd *cmd)
 {
-    t_cmd *cmd = shell->ast->cmd;
-    if(!ft_strcmp(cmd->cmd, "echo"))
-        ft_echo(cmd);
-    if(!ft_strcmp(cmd->cmd, "env"))
-        ft_env(shell);
-    //to-do what left
-    return ;
+	if (!cmd || !cmd->cmd)
+	{
+		fprintf(stderr, "minishell: invalid command in find_buildin()\n");
+		// shell->exit_status = 1;
+		return;
+	}
+
+	if (!ft_strcmp(cmd->cmd, "echo"))
+		ft_echo(cmd);
+	else if (!ft_strcmp(cmd->cmd, "env"))
+		ft_env(shell);
+	// TODO: другие команды
 }
+

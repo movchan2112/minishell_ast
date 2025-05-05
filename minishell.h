@@ -1,6 +1,8 @@
 #ifndef MINISHELL_H
 #define MINISHELL_H
 
+#include <fcntl.h>
+#include <string.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <unistd.h>
@@ -94,7 +96,7 @@ char 		*ft_strndup(const char *s, size_t n);
 char		*ft_strchr(const char *s, int c);
 char 		*read_q(char *line);
 //build-in
-void 		find_buildin(t_shell *shell);
+void 		find_buildin(t_shell *shell, t_cmd *cmd);
 void    	ft_env(t_shell *shell);
 int 		ft_echo(t_cmd *cmd);
 #endif
