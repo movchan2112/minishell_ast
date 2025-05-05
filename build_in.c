@@ -1,6 +1,6 @@
 #include "minishell.h"
 
-int ft_echo(t_cmd *cmd)
+int ft_echo(t_shell *shell,t_cmd *cmd)
 {
 	int n = 1;
 	int i = 0;
@@ -9,6 +9,12 @@ int ft_echo(t_cmd *cmd)
 		{
 			i = 1;
 			n++;
+		}
+		else if(ft_strcmp(cmd->args[1],"$?\n") == 0)
+		{
+			i = 1;
+			n++;
+			printf("%d",shell->exit_status);
 		}
 	while (cmd->args[n])
 	{
@@ -19,7 +25,6 @@ int ft_echo(t_cmd *cmd)
 	}
 	if(i == 0)
 		ft_putstr("\n");
-	// g_exit_status = 0;
 	return 0;
 }
 
@@ -149,7 +154,7 @@ int	ft_cd(t_shell *shell, t_cmd *cmd)
 	
 	if(!target || chdir(target) != 0)
 	{
-		perror("CD");
+		perror("cd");
 		return 1;
 	}
 	
@@ -160,4 +165,5 @@ int	ft_cd(t_shell *shell, t_cmd *cmd)
 	
 	free(newpwd);
 	free(oldpwd);
+	return 0;
 }

@@ -4,9 +4,9 @@ int buildin_checker(char *cmd)
 {
     if(!cmd)
         return 0;
-    char *argc1[] = {"cd","echo","pwd","exit","export","unset","env"};    // check len after in while loop
+    char *argc1[] = {"cd","echo","pwd","exit","export","unset","env","$?"};    // check len after in while loop
     int i = 0;
-    while (i < 7) // <----------here
+    while (i < 8) // <----------here
     {
         if(ft_strcmp(cmd, argc1[i]) == 0)
             return(1);
@@ -19,12 +19,12 @@ void find_buildin(t_shell *shell, t_cmd *cmd)
 	if (!cmd || !cmd->cmd)
 	{
 		fprintf(stderr, "minishell: invalid command in find_buildin()\n");
-		// shell->exit_status = 1;
+		shell->exit_status = 1;
 		return;
 	}
 
 	if (!ft_strcmp(cmd->cmd, "echo"))
-		ft_echo(cmd);
+        shell->exit_status = ft_echo(shell,cmd);
 	else if (!ft_strcmp(cmd->cmd, "env"))
 		ft_env(shell);
     else if (!ft_strcmp(cmd->cmd, "pwd"))
@@ -36,7 +36,9 @@ void find_buildin(t_shell *shell, t_cmd *cmd)
     else if (!ft_strcmp(cmd->cmd, "unset"))
 		ft_unset(shell, cmd);
     else if (!ft_strcmp(cmd->cmd, "cd"))
-		ft_cd(shell, cmd);
+	    shell->exit_status = ft_cd(shell, cmd);
+    else if (!ft_strcmp(cmd->cmd, "$?"))
+		printf("%d\n",shell->exit_status);
 	// TODO: другие команды
 }
 

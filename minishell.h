@@ -105,7 +105,8 @@ char 		*read_q(char *line);
 //build-in
 void 		find_buildin(t_shell *shell, t_cmd *cmd);
 void    	ft_env(t_shell *shell);
-int 		ft_echo(t_cmd *cmd);
+// int 		ft_echo(t_cmd *cmd);
+int 		ft_echo(t_shell *shell,t_cmd *cmd);
 int			ft_pwd();
 void 		print_export(t_env *env);
 void		ft_export(t_shell *shell, t_cmd *cmd);
@@ -113,4 +114,5 @@ void 		cleanup_shell(t_shell *shell);
 int 		ft_exit(t_shell *shell);
 void		ft_unset(t_shell *shell, t_cmd *cmd);
 void 		change_env_value(t_env *env, const char *key, const char *value);
+int			ft_cd(t_shell *shell, t_cmd *cmd);
 #endif
