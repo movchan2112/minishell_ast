@@ -254,7 +254,6 @@ int main(int ac, char **av, char **envp)
 	char *line = NULL;
 	t_token *token = NULL;
 	t_env *env = NULL;
-	// g_exit_status = 0;
 	t_shell shell;
 
 	shell.env = init_env(envp);
@@ -274,13 +273,6 @@ int main(int ac, char **av, char **envp)
 			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
 			if(shell.ast)
 			{
-				// printf("== DEBUG: command = %s\n", shell.ast->cmd ? shell.ast->cmd->cmd : "NULL");
-				// if (shell.ast->cmd && shell.ast->cmd->args)
-				// {
-				// 	for (int i = 0; shell.ast->cmd->args[i]; i++)
-				// 		printf("arg[%d] = %s\n", i, shell.ast->cmd->args[i]);
-				// }
-
 				exec_tree(&shell, shell.ast);
 				free_token_list(shell.tokens);
 				free_ast(shell.ast);

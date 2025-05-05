@@ -1,5 +1,5 @@
 CC = gcc
-CFLAGS = -fsanitize=address -g
+CFLAGS =
 LDFLAGS = -lreadline -lncurses
 
 SRCS = main.c my_strtok.c env.c cmd_cheker.c tokens.c cleaner.c build_in.c

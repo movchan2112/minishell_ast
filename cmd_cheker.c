@@ -27,6 +27,16 @@ void find_buildin(t_shell *shell, t_cmd *cmd)
 		ft_echo(cmd);
 	else if (!ft_strcmp(cmd->cmd, "env"))
 		ft_env(shell);
+    else if (!ft_strcmp(cmd->cmd, "pwd"))
+		ft_pwd();
+    else if (!ft_strcmp(cmd->cmd, "export"))
+		ft_export(shell,cmd);
+    else if (!ft_strcmp(cmd->cmd, "exit"))
+		ft_exit(shell);
+    else if (!ft_strcmp(cmd->cmd, "unset"))
+		ft_unset(shell, cmd);
+    else if (!ft_strcmp(cmd->cmd, "cd"))
+		ft_cd(shell, cmd);
 	// TODO: другие команды
 }
 
