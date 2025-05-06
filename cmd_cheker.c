@@ -27,17 +27,17 @@ void find_buildin(t_shell *shell, t_cmd *cmd)
         shell->exit_status = ft_echo(shell,cmd);
 	else if (!ft_strcmp(cmd->cmd, "env"))
 		ft_env(shell);
-    else if (!ft_strcmp(cmd->cmd, "pwd"))
+  else if (!ft_strcmp(cmd->cmd, "pwd"))
 		ft_pwd();
-    else if (!ft_strcmp(cmd->cmd, "export"))
+  else if (!ft_strcmp(cmd->cmd, "export"))
 		ft_export(shell,cmd);
-    else if (!ft_strcmp(cmd->cmd, "exit"))
+  else if (!ft_strcmp(cmd->cmd, "exit"))
 		ft_exit(shell);
-    else if (!ft_strcmp(cmd->cmd, "unset"))
+  else if (!ft_strcmp(cmd->cmd, "unset"))
 		ft_unset(shell, cmd);
-    else if (!ft_strcmp(cmd->cmd, "cd"))
+  else if (!ft_strcmp(cmd->cmd, "cd"))
 	    shell->exit_status = ft_cd(shell, cmd);
-    else if (!ft_strcmp(cmd->cmd, "$?"))
+  else if (!ft_strcmp(cmd->cmd, "$?"))
 		printf("%d\n",shell->exit_status);
 	// TODO: другие команды
 }

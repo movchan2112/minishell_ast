@@ -1,31 +1,31 @@
 #include "minishell.h"
 
-int ft_echo(t_shell *shell,t_cmd *cmd)
+int ft_echo(t_shell *shell, t_cmd *cmd)
 {
-	int n = 1;
-	int i = 0;
-	if(cmd->args[1])
-		if(ft_strcmp(cmd->args[1],"-n") == 0)
-		{
-			i = 1;
-			n++;
-		}
-		else if(ft_strcmp(cmd->args[1],"$?\n") == 0)
-		{
-			i = 1;
-			n++;
-			printf("%d",shell->exit_status);
-		}
-	while (cmd->args[n])
-	{
-		ft_putstr(cmd->args[n]);
-		if (cmd->args[n + 1])
-			ft_putstr(" ");
-		n++;
-	}
-	if(i == 0)
-		ft_putstr("\n");
-	return 0;
+    int n = 1;
+    int newline = 1;  // Default to printing newline
+    
+    // Handle -n flag and $? special case
+    if (cmd->args[1] && ft_strcmp(cmd->args[1], "-n") == 0)
+    {
+        newline = 0;
+        n++;
+    }
+
+    // Print remaining arguments
+    while (cmd->args[n])
+    {
+        ft_putstr_fd(cmd->args[n], STDOUT_FILENO);
+        if (cmd->args[n + 1])
+            ft_putstr_fd(" ", STDOUT_FILENO);
+        n++;
+    }
+
+    // Print newline unless -n was specified
+    if (newline)
+        ft_putstr_fd("\n", STDOUT_FILENO);
+    
+    return (0);
 }
 
 void	ft_env(t_shell *shell)

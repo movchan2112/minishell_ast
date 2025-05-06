@@ -1,5 +1,30 @@
 #include "minishell.h"
+char *ft_strcpy(char *dest, const char *src)
+{
+    char *ptr = dest;
+    
+    if (dest == NULL || src == NULL)
+        return dest;
+        
+    while (*src != '\0')
+    {
+        *ptr = *src;
+        ptr++;
+        src++;
+    }
+    *ptr = '\0';  // Null-terminate the destination
+    
+    return dest;
+}
 
+int	ft_strlen(const char *str)
+{
+	size_t	len = 0;
+
+	while (str && str[len])
+		len++;
+	return (len);
+}
 t_ast *create_ast_node(t_node_type type)
 {
 	t_ast *node = malloc(sizeof(t_ast));
@@ -191,14 +216,19 @@ void print_ast(t_ast *node, int level)
 	print_ast(node->right, level + 1);
 }
 
-void	ft_putstr(const char *s)
+void	ft_putstr(const char *s) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
 	if (!s)
 		return;
 	while (*s)
 		write(1, s++, 1);
 }
-
+void ft_putstr_fd(const char *s, int fd)
+{
+    if (!s || fd < 0)
+        return;
+    write(fd, s, ft_strlen(s)); // Один системный вызов для всей строки
+}
 
 int exec_tree(t_shell *shell,t_ast *ast)
 {
@@ -247,6 +277,127 @@ int exec_tree(t_shell *shell,t_ast *ast)
 
 	return 0;
 }
+static int	ft_intlen(int n)
+{
+	int	len = (n <= 0) ? 1 : 0;
+
+	while (n)
+	{
+		n /= 10;
+		len++;
+	}
+	return (len);
+}
+// char *str_append(char *s1, const char *s2, int free_s1)
+// {
+// 	char *res;
+// 	int len1 = ft_strlen(s1);
+// 	int len2 = ft_strlen(s2);
+
+// 	res = malloc(len1 + len2 + 1);
+// 	if (!res)
+// 		return NULL;
+
+// 	ft_strcpy(res, s1);
+// 	ft_strcpy(res + len1, s2);
+
+// 	if (free_s1)
+// 		free(s1);
+// 	return res;
+// }
+
+
+char	*ft_itoa(int n) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{
+	int		len = ft_intlen(n);
+	char	*str;
+	long	nb = n;  // использовать long чтобы избежать переполнения при -2147483648
+
+	str = malloc(len + 1);
+	if (!str)
+		return (NULL);
+	str[len] = '\0';
+
+	if (nb < 0)
+	{
+		str[0] = '-';
+		nb = -nb;
+	}
+	else if (nb == 0)
+		str[0] = '0';
+
+	while (nb)
+	{
+		str[--len] = (nb % 10) + '0';
+		nb /= 10;
+	}
+	return (str);
+}
+int	ft_isalpha(int c) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{
+	return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
+}
+int	ft_isalnum(int c) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+{
+	return ((c >= 'A' && c <= 'Z') || 
+	        (c >= 'a' && c <= 'z') || 
+	        (c >= '0' && c <= '9'));
+}
+
+
+char *preprocess_line(const char *line, t_shell *shell)
+{
+	char *result = ft_strdup("");
+	int i = 0;
+
+	while (line[i])
+	{
+		// Обработка кавычек
+		if (line[i] == '\'' || line[i] == '"')
+		{
+			char quote = line[i++];
+			int start = i;
+			while (line[i] && line[i] != quote)
+				i++;
+			char *segment = ft_strndup(line + start, i - start);
+			result = str_append(result, segment, 0);
+			free(segment);
+			if (line[i] == quote)
+				i++;
+		}
+
+		// Обработка переменных: $?
+		else if (line[i] == '$' && line[i + 1] == '?')
+		{
+			char *exit_str = ft_itoa(shell->exit_status);
+			result = str_append(result, exit_str, 0);
+			free(exit_str);
+			i += 2;
+		}
+
+		// Обработка переменных: $VAR_NAME
+		else if (line[i] == '$' && (ft_isalpha(line[i + 1]) || line[i + 1] == '_'))
+		{
+			int start = ++i;
+			while (ft_isalnum(line[i]) || line[i] == '_')
+				i++;
+			char *key = ft_strndup(line + start, i - start);
+			char *val = get_env_value(shell->env, key);
+			if (val)
+				result = str_append(result, val, 0);
+			free(key);
+		}
+
+		// Обычные символы
+		else
+		{
+			char temp[2] = { line[i], 0 };
+			result = str_append(result, temp, 0);
+			i++;
+		}
+	}
+	return result;
+}
 
 
 int main(int ac, char **av, char **envp)
@@ -273,13 +424,14 @@ int main(int ac, char **av, char **envp)
 			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
 			if(shell.ast)
 			{
+				print_tokens(shell.tokens);
 				exec_tree(&shell, shell.ast);
 				free_token_list(shell.tokens);
 				free_ast(shell.ast);
 			}
 		}
 		add_history(line);
-		free(line);	
+		free(line);
 	}
 	return(0);
 }

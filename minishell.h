@@ -98,10 +98,13 @@ void		ft_free_env(t_env *env);
 
 //standart
 void		ft_putstr(const char *s);
+char 		*str_append(const char *s1, const char *s2, int add_newline);
 char		*ft_strdup(const char *s);
 char 		*ft_strndup(const char *s, size_t n);
 char		*ft_strchr(const char *s, int c);
 char 		*read_q(char *line);
+void		ft_putstr_fd(const char *s, int fd);
+
 //build-in
 void 		find_buildin(t_shell *shell, t_cmd *cmd);
 void    	ft_env(t_shell *shell);

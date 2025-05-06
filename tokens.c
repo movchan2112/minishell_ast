@@ -175,58 +175,142 @@ int check_and_add_token(t_token **token_list, char *line, int start, int i)
     return 0; // this will change in_token to 0
 }
 
+// t_token *parse_line(char *line)
+// {
+// 	int i = 0;
+// 	int start = 0;
+// 	int in_token = 0;
+// 	t_token *token_list = NULL;
+// 	while (line[i])
+// 	{
+// 		if (ft_flag(line, i) == 0) // only care about special stuff outside quotes
+// 		{
+// 			// handle two-char operators like << >>
+// 			if (is_two_char_operator(line, i))
+// 			{
+// 				if (in_token)
+// 					in_token = check_and_add_token(&token_list, line, start, i);
+// 				char *op = ft_strndup(line + i, 2);
+// 				add_token_back(&token_list, init_token(op));
+// 				free(op);
+// 				i += 2;
+// 				continue;
+// 			}
+// 			// single-character special symbols
+// 			else if (is_special_symbol(line[i]))
+// 			{
+// 				if (in_token)
+// 					in_token = check_and_add_token(&token_list, line, start, i);
+// 				char *op = ft_strndup(line + i, 1);
+// 				add_token_back(&token_list, init_token(op));
+// 				free(op);
+// 				i++;
+// 				continue;
+// 			}
+// 			else if(ft_flag(line,i+1) != 0)
+// 			{
+
+// 			}
+// 			// space ends token
+// 			else if (line[i] == ' ' && in_token)
+// 					in_token = check_and_add_token(&token_list, line, start, i);
+
+// 			else if (line[i] != ' ' && in_token == 0)
+// 			{
+// 				in_token = 1;
+// 				start = i;
+// 			}
+// 		}
+// 		else if (in_token == 0 && line[i] != ' ')
+// 		{
+// 			in_token = 1;
+// 			start = i;
+// 		}
+// 		i++;
+// 	}
+
+// 	// Final token at end of line
+// 	if (in_token)
+// 		in_token = check_and_add_token(&token_list, line, start, i);
+// 	return token_list;
+// }
 t_token *parse_line(char *line)
 {
-	int i = 0;
-	int start = 0;
-	int in_token = 0;
-	t_token *token_list = NULL;
-	while (line[i])
-	{
-		if (ft_flag(line, i) == 0) // only care about special stuff outside quotes
-		{
-			// handle two-char operators like << >>
-			if (is_two_char_operator(line, i))
-			{
-				if (in_token)
-					in_token = check_and_add_token(&token_list, line, start, i);
-				char *op = ft_strndup(line + i, 2);
-				add_token_back(&token_list, init_token(op));
-				free(op);
-				i += 2;
-				continue;
-			}
-			// single-character special symbols
-			else if (is_special_symbol(line[i]))
-			{
-				if (in_token)
-					in_token = check_and_add_token(&token_list, line, start, i);
-				char *op = ft_strndup(line + i, 1);
-				add_token_back(&token_list, init_token(op));
-				free(op);
-				i++;
-				continue;
-			}
-			// space ends token
-			else if (line[i] == ' ' && in_token)
-					in_token = check_and_add_token(&token_list, line, start, i);
+    int i = 0;
+    int start = 0;
+    int in_token = 0;
+    t_token *token_list = NULL;
+    int quote_type = 0; // 0 = нет, 1 = ', 2 = "
 
-			else if (line[i] != ' ' && in_token == 0)
-			{
-				in_token = 1;
-				start = i;
-			}
-		}
-		else if (in_token == 0 && line[i] != ' ')
-		{
-			in_token = 1;
-			start = i;
-		}
-		i++;
-	}
+    while (line[i])
+    {
+        // Определяем тип текущей кавычки (если есть)
+        if (!quote_type && (line[i] == '\'' || line[i] == '"'))
+        {
+            quote_type = (line[i] == '\'') ? 1 : 2;
+            if (!in_token) {
+                in_token = 1;
+                start = i;
+            }
+            i++;
+            continue;
+        }
 
-	// Final token at end of line
-	if (in_token)
-		in_token = check_and_add_token(&token_list, line, start, i);
-	return token_list;
+        // Если находимся внутри кавычек
+        if (quote_type)
+        {
+            // Проверяем закрывающую кавычку
+            if ((quote_type == 1 && line[i] == '\'') || 
+                (quote_type == 2 && line[i] == '"'))
+            {
+                quote_type = 0;
+                // Добавляем токен включая кавычки
+                check_and_add_token(&token_list, line, start, i + 1);
+                in_token = 0;
+                i++;
+                continue;
+            }
+            i++;
+            continue;
+        }
+
+        // Обработка вне кавычек
+        if (is_two_char_operator(line, i))
+        {
+            if (in_token)
+                check_and_add_token(&token_list, line, start, i);
+            add_token_back(&token_list, init_token(ft_strndup(line + i, 2)));
+            i += 2;
+            in_token = 0;
+            continue;
+        }
+        else if (is_special_symbol(line[i]))
+        {
+            if (in_token)
+                check_and_add_token(&token_list, line, start, i);
+            add_token_back(&token_list, init_token(ft_strndup(line + i, 1)));
+            i++;
+            in_token = 0;
+            continue;
+        }
+        else if (line[i] == ' ')
+        {
+            if (in_token)
+                check_and_add_token(&token_list, line, start, i);
+            in_token = 0;
+            i++;
+            continue;
+        }
+        else if (!in_token)
+        {
+            in_token = 1;
+            start = i;
+        }
+        i++;
+    }
+
+    if (in_token)
+        check_and_add_token(&token_list, line, start, i);
+    
+    return token_list;
 }
