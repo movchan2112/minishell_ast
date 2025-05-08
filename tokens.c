@@ -152,18 +152,69 @@ char *ft_substr(const char *s, unsigned int start, size_t len)
 	return (sub);
 }
 
-char *strip_quotes(char *s)
-{
-	size_t len = strlen(s);
 
-	if (len >= 2 && 
-	   ((s[0] == '"' && s[len - 1] == '"') ||
-		(s[0] == '\'' && s[len - 1] == '\'')))
-	{
-		return ft_substr(s, 1, len - 2); // remove both ends
-	}
-	return s; // return as is
+/// -------------------------------------------------------------------------------------------------------------- ///
+/// ------------------------------------------------quotes-------------------------------------------------------- ///
+/// -------------------------------------------------------------------------------------------------------------- ///
+
+
+int quotes_checker_len(char *line)
+{
+    int i = 0;
+    char quotes = 0;
+    int len = 0;
+
+    while (line[i])
+    {
+        if ((line[i] == '\'' || line[i] == '\"') && ft_flag(line, i) == 0)
+        {
+            // printf("%c its first in pos - %d\n",line[i],i); ---delete
+            quotes = line[i];
+        }
+        else if(quotes == line[i] && ft_flag(line,i) != 0)
+        {
+            // printf("%c sedond in pos - %d\n",line[i],i); ---delete
+            quotes = 0;
+        }
+        else
+        {
+            len++;
+            // printf("%c",line[i]); //---delete
+			// write(1, &line[i], 1);
+        }
+        i++;
+    }
+    return(len);
 }
+
+char *strip_quotes(char *line)
+{
+	char quotes = 0;
+	size_t l = quotes_checker_len(line);
+    int old = 0;
+	int new = 0;
+
+    char *dup = malloc(l + 1);
+    if (!dup)
+        return NULL;
+    while (line[old] && new < l)
+    {
+        if ((line[old] == '\'' || line[old] == '\"') && ft_flag(line, old) == 0)
+            quotes = line[old];
+        else if(quotes == line[old] && ft_flag(line,old) != 0)
+            quotes = 0;
+        else
+        {
+
+			dup[new] = line[old];
+            new++;
+        }
+        old++;
+    }
+    dup[new] = '\0';
+    return dup;
+}
+
 
 int check_and_add_token(t_token **token_list, char *line, int start, int i)
 {
@@ -234,83 +285,154 @@ int check_and_add_token(t_token **token_list, char *line, int start, int i)
 // 		in_token = check_and_add_token(&token_list, line, start, i);
 // 	return token_list;
 // }
+
+
 t_token *parse_line(char *line)
 {
     int i = 0;
     int start = 0;
     int in_token = 0;
     t_token *token_list = NULL;
-    int quote_type = 0; // 0 = нет, 1 = ', 2 = "
 
     while (line[i])
     {
-        // Определяем тип текущей кавычки (если есть)
-        if (!quote_type && (line[i] == '\'' || line[i] == '"'))
-        {
-            quote_type = (line[i] == '\'') ? 1 : 2;
-            if (!in_token) {
-                in_token = 1;
-                start = i;
-            }
-            i++;
-            continue;
-        }
+        int in_quote = ft_flag(line, i) != 0;
 
-        // Если находимся внутри кавычек
-        if (quote_type)
+        // only treat these outside of quotes
+        if (!in_quote)
         {
-            // Проверяем закрывающую кавычку
-            if ((quote_type == 1 && line[i] == '\'') || 
-                (quote_type == 2 && line[i] == '"'))
+            // handle two-char redirs: << or >>
+            if ((line[i] == '<' && line[i+1] == '<') ||
+                (line[i] == '>' && line[i+1] == '>'))
             {
-                quote_type = 0;
-                // Добавляем токен включая кавычки
-                check_and_add_token(&token_list, line, start, i + 1);
+                if (in_token)
+                    in_token = check_and_add_token(&token_list, line, start, i);
+
+                char *op = ft_strndup(line + i, 2);
+                add_token_back(&token_list, init_token(op));
+                free(op);
+
+                i += 2;
+                continue;
+            }
+            // single-char separators: space, pipe, < or >
+            else if (line[i] == ' ' || line[i] == '|' ||
+                     line[i] == '<' || line[i] == '>')
+            {
+                // end of a normal word-token?
+                if (in_token)
+                    in_token = check_and_add_token(&token_list, line, start, i);
+
+                // if it's a pipe or redir, add it as its own token
+                if (line[i] == '|' || line[i] == '<' || line[i] == '>')
+                {
+                    char op[2] = { line[i], '\0' };
+                    add_token_back(&token_list, init_token(ft_strdup(op)));
+                }
+
+                // reset and advance past the separator
                 in_token = 0;
                 i++;
                 continue;
             }
-            i++;
-            continue;
         }
 
-        // Обработка вне кавычек
-        if (is_two_char_operator(line, i))
+        // if here, we're either inside quotes, or a normal character
+        if (!in_token)
         {
-            if (in_token)
-                check_and_add_token(&token_list, line, start, i);
-            add_token_back(&token_list, init_token(ft_strndup(line + i, 2)));
-            i += 2;
-            in_token = 0;
-            continue;
-        }
-        else if (is_special_symbol(line[i]))
-        {
-            if (in_token)
-                check_and_add_token(&token_list, line, start, i);
-            add_token_back(&token_list, init_token(ft_strndup(line + i, 1)));
-            i++;
-            in_token = 0;
-            continue;
-        }
-        else if (line[i] == ' ')
-        {
-            if (in_token)
-                check_and_add_token(&token_list, line, start, i);
-            in_token = 0;
-            i++;
-            continue;
-        }
-        else if (!in_token)
-        {
+            // start a new token
             in_token = 1;
             start = i;
         }
         i++;
     }
 
+    // flush the final token
     if (in_token)
         check_and_add_token(&token_list, line, start, i);
-    
+
     return token_list;
 }
+
+
+
+// t_token *parse_line(char *line)
+// {
+//     int i = 0;
+//     int start = 0;
+//     int in_token = 0;
+//     t_token *token_list = NULL;
+//     int quote_type = 0; // 0 = нет, 1 = ', 2 = "
+
+//     while (line[i])
+//     {
+//         // Определяем тип текущей кавычки (если есть)
+//         if (!quote_type && (line[i] == '\'' || line[i] == '"'))
+//         {
+//             quote_type = (line[i] == '\'') ? 1 : 2;
+//             if (!in_token) {
+//                 in_token = 1;
+//                 start = i;
+//             }
+//             i++;
+//             continue;
+//         }
+
+//         // Если находимся внутри кавычек
+//         if (quote_type)
+//         {
+//             // Проверяем закрывающую кавычку
+//             if ((quote_type == 1 && line[i] == '\'') || 
+//                 (quote_type == 2 && line[i] == '"'))
+//             {
+//                 quote_type = 0;
+//                 // Добавляем токен включая кавычки
+//                 check_and_add_token(&token_list, line, start, i + 1);
+//                 in_token = 0;
+//                 i++;
+//                 continue;
+//             }
+//             i++;
+//             continue;
+//         }
+
+//         // Обработка вне кавычек
+//         if (is_two_char_operator(line, i))
+//         {
+//             if (in_token)
+//                 check_and_add_token(&token_list, line, start, i);
+//             add_token_back(&token_list, init_token(ft_strndup(line + i, 2)));
+//             i += 2;
+//             in_token = 0;
+//             continue;
+//         }
+//         else if (is_special_symbol(line[i]))
+//         {
+//             if (in_token)
+//                 check_and_add_token(&token_list, line, start, i);
+//             add_token_back(&token_list, init_token(ft_strndup(line + i, 1)));
+//             i++;
+//             in_token = 0;
+//             continue;
+//         }
+//         else if (line[i] == ' ')
+//         {
+//             if (in_token)
+//                 check_and_add_token(&token_list, line, start, i);
+//             in_token = 0;
+//             i++;
+//             continue;
+//         }
+//         else if (!in_token)
+//         {
+//             in_token = 1;
+//             start = i;
+//         }
+//         i++;
+//     }
+
+//     if (in_token)
+//         check_and_add_token(&token_list, line, start, i);
+    
+//     return token_list;
+// }

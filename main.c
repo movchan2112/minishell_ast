@@ -410,8 +410,6 @@ int main(int ac, char **av, char **envp)
 	shell.env = init_env(envp);
 	while (1)
 	{
-		// if(get_env_value(shell.env,"HOME"))
-		// 	printf("%s : ", get_env_value(shell.env,"HOME"));
 		char *line = readline("minishell$ ");
 		if (!line)
 			break;
@@ -424,7 +422,7 @@ int main(int ac, char **av, char **envp)
 			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
 			if(shell.ast)
 			{
-				print_tokens(shell.tokens);
+				// print_tokens(shell.tokens);
 				exec_tree(&shell, shell.ast);
 				free_token_list(shell.tokens);
 				free_ast(shell.ast);
@@ -433,5 +431,5 @@ int main(int ac, char **av, char **envp)
 		add_history(line);
 		free(line);
 	}
-	return(0);
+	return(shell.exit_status);
 }
