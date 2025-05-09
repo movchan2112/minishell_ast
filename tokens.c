@@ -216,70 +216,118 @@ char *strip_quotes(char *line)
 }
 
 
+/// -------------------------------------------------------------------------------------------------------------- ///
 /// ------------------------------------------------VARIABLES----------------------------------------------------- ///
-/// ------------------------------------------------VARIABLES----------------------------------------------------- ///
-/// ------------------------------------------------VARIABLES----------------------------------------------------- ///
+/// -------------------------------------------------------------------------------------------------------------- ///
 
-
-char *expand_vars(const char *line)
+static int int_len(int n)
 {
-    size_t result_size = 4096;
-    char *result = calloc(result_size, 1);
-    if (!result)
+    int len = (n <= 0); // for '-' or '0'
+    while (n)
+    {
+        len++;
+        n /= 10;
+    }
+    return len;
+}
+
+char *ft_itoa(int n)
+{
+    int len = int_len(n);
+    char *str = malloc(len + 1);
+    if (!str)
         return NULL;
 
-    size_t res_i = 0;
+    str[len] = '\0';
 
-    for (int i = 0; line[i];)
+    long nb = n; // to safely handle INT_MIN
+    if (nb < 0)
+        nb = -nb;
+
+    while (len--)
     {
-        if (line[i] == '$' && ft_flag(line, i) != 1) // не в одинарных
+        str[len] = nb % 10 + '0';
+        nb /= 10;
+        if (nb == 0 && n < 0)
         {
-            i++; // skip $
-
-            int start = i;
-            while (isalnum(line[i]) || line[i] == '_')
-                i++;
-
-            int len = i - start;
-
-            if (len > 0)
-            {
-                char var[256] = {0};
-                strncpy(var, line + start, len);
-
-                char *value = getenv(var);
-                if (value)
-                {
-                    size_t val_len = strlen(value);
-                    if (res_i + val_len >= result_size - 1)
-                    {
-                        result_size *= 2;
-                        result = realloc(result, result_size);
-                        if (!result)
-                            return NULL;
-                    }
-                    strcpy(result + res_i, value);
-                    res_i += val_len;
-                }
-            }
-            // else: `$` with no variable — insert nothing (like bash)
-        }
-        else
-        {
-            result[res_i++] = line[i++];
+            str[--len] = '-';
+            break;
         }
     }
 
-    result[res_i] = '\0';
-    return result;
+    return str;
 }
 
+// char *expand_vars(t_shell *shell ,const char *line)
+// {
+//     size_t result_size = 4096;
+//     char *result = calloc(result_size, 1);
+//     if (!result)
+//         return NULL;
 
-int check_and_add_token(t_token **token_list, char *line, int start, int i)
+//     size_t res_i = 0;
+//     int cheked = 0;
+//     int start = 0;
+//     for (int i = 0; line[i];)
+//     {
+//         if (line[i] == '$' && line[i+1] != '\'' && line[i+1] != '\"' && line[i+1] != '\0' && line[i+1] != ' ' && cheked == 0)
+//             cheked = 1;
+//         if (line[i] == '$' && ft_flag(line, i) != 1 && cheked == 1) // не в одинарных
+//         {
+//             i++; // skip $
+//             if(line[i+1] == '?')
+//             {
+//                 i++;
+//                 start = i;
+//             }
+//             else
+//             {
+//                 start = i;
+//                 while (isalnum(line[i]) || line[i] == '_')
+//                     i++;
+//                 int len = i - start;
+//             }
+    
+//             if (len > 0)
+//             {
+//                 char *value = NULL;
+//                 char var[256] = {0};
+//                 strncpy(var, line + start, len);
+//                 printf("IIIIIII %s",var);
+//                 if(ft_strcmp(var,"?"))
+//                     value = ft_itoa(shell->exit_status);
+//                 else
+//                     value = getenv(var);
+//                 if (value)
+//                 {
+//                     size_t val_len = strlen(value);
+//                     if (res_i + val_len >= result_size - 1)
+//                     {
+//                         result_size *= 2;
+//                         result = realloc(result, result_size);
+//                         if (!result)
+//                             return NULL;
+//                     }
+//                     strcpy(result + res_i, value);
+//                     res_i += val_len;
+//                     cheked = 0;
+//                 }
+//             }
+//             // else: `$` with no variable — insert nothing (like bash)
+//         }
+//         else
+//             result[res_i++] = line[i++];
+//     }
+
+//     result[res_i] = '\0';
+//     return result;
+// }
+
+int check_and_add_token(t_token **token_list, char *line, int start, int i, t_shell *shell)
 {
     char *clean_token;
     char *raw_token = ft_strndup(line + start, i - start);
-    char *expanded_token = expand_vars(raw_token);
+    char *expanded_token = expand_vars(shell,raw_token);
     if(expanded_token)
         clean_token = strip_quotes(expanded_token);
     if (clean_token)
@@ -291,7 +339,7 @@ int check_and_add_token(t_token **token_list, char *line, int start, int i)
 }
 
 
-t_token *parse_line(char *line)
+t_token *parse_line(t_shell *shell, char *line)
 {
     int i = 0;
     int start = 0;
@@ -310,7 +358,7 @@ t_token *parse_line(char *line)
                 (line[i] == '>' && line[i+1] == '>'))
             {
                 if (in_token)
-                    in_token = check_and_add_token(&token_list, line, start, i);
+                    in_token = check_and_add_token(&token_list, line, start, i,shell);
 
                 char *op = ft_strndup(line + i, 2);
                 add_token_back(&token_list, init_token(op));
@@ -325,7 +373,7 @@ t_token *parse_line(char *line)
             {
                 // end of a normal word-token?
                 if (in_token)
-                    in_token = check_and_add_token(&token_list, line, start, i);
+                    in_token = check_and_add_token(&token_list, line, start, i,shell);
 
                 // if it's a pipe or redir, add it as its own token
                 if (line[i] == '|' || line[i] == '<' || line[i] == '>')
@@ -353,7 +401,60 @@ t_token *parse_line(char *line)
 
     // flush the final token
     if (in_token)
-        check_and_add_token(&token_list, line, start, i);
+        check_and_add_token(&token_list, line, start, i,shell);
 
     return token_list;
+}
+
+char *expand_vars(t_shell *shell,const char *line)
+{
+    size_t result_size = 4096;
+    char *result = calloc(result_size, 1);
+    if (!result)
+        return NULL;
+
+    size_t res_i = 0;
+    int cheked = 0;
+    int start = 0;
+        for (int i = 0; line[i];)
+        {
+            if (line[i] == '$' && line[i+1] != '\'' && line[i+1] != '\"' && line[i+1] != '\0' && line[i+1] != ' ' && cheked == 0)
+                cheked = 1;
+            if (line[i] == '$' && ft_flag(line, i) != 1 && cheked == 1) // не в одинарных
+            {
+                i++; // skip $
+    
+                int start = i;
+                while (isalnum(line[i]) || line[i] == '_')
+                    i++;
+    
+                int len = i - start;
+    
+                if (len > 0)
+                {
+                    char var[256] = {0};
+                    strncpy(var, line + start, len);
+    
+                    char *value = getenv(var);
+                    if (value)
+                    {
+                        size_t val_len = strlen(value);
+                        if (res_i + val_len >= result_size - 1)
+                        {
+                            result_size *= 2;
+                            result = realloc(result, result_size);
+                            if (!result)
+                                return NULL;
+                        }
+                        strcpy(result + res_i, value);
+                        res_i += val_len;
+                    }
+                }
+            }
+            else
+                result[res_i++] = line[i++];
+        }
+
+    result[res_i] = '\0';
+    return result;
 }

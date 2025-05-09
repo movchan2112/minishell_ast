@@ -20,7 +20,7 @@ int ft_echo(t_shell *shell, t_cmd *cmd)
 			ft_putstr_fd(cmd->args[n], STDOUT_FILENO);
 			if (cmd->args[n + 1])
 				ft_putstr_fd(" ", STDOUT_FILENO);
-		}
+		}		
 		n++;
 	}
 
@@ -31,7 +31,7 @@ int ft_echo(t_shell *shell, t_cmd *cmd)
     return (0);
 }
 
-void	ft_env(t_shell *shell)
+int	ft_env(t_shell *shell)
 {
 	t_env *env = shell->env;
 	while (env)
@@ -40,6 +40,7 @@ void	ft_env(t_shell *shell)
 			printf("%s=%s\n", env->key, env->val);
 			env = env->next;
 	}
+	return 0;
 }
 
 /// FOR CD
@@ -72,13 +73,13 @@ void print_export(t_env *env1)
 	}
 }
 
-void	ft_export(t_shell *shell, t_cmd *cmd)
+int	ft_export(t_shell *shell, t_cmd *cmd)
 {
 	if(cmd->args[1])
 	{
 		char *eq = ft_strchr(cmd->args[1], '=');
 		if (!eq)
-			return; // nothing to assign
+			return 0; // nothing to assign
 	
 		int key_len = eq - cmd->args[1];
 		char *key = ft_strndup(cmd->args[1], key_len);
@@ -100,6 +101,7 @@ void	ft_export(t_shell *shell, t_cmd *cmd)
 	}
 	else
 		print_export(shell->env);
+		return(0);
 }
 
 void cleanup_shell(t_shell *shell)

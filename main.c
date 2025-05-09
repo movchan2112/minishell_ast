@@ -294,32 +294,7 @@ static int	ft_intlen(int n)
 	return (len);
 }
 
-char	*ft_itoa(int n) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-{
-	int		len = ft_intlen(n);
-	char	*str;
-	long	nb = n;  // использовать long чтобы избежать переполнения при -2147483648
 
-	str = malloc(len + 1);
-	if (!str)
-		return (NULL);
-	str[len] = '\0';
-
-	if (nb < 0)
-	{
-		str[0] = '-';
-		nb = -nb;
-	}
-	else if (nb == 0)
-		str[0] = '0';
-
-	while (nb)
-	{
-		str[--len] = (nb % 10) + '0';
-		nb /= 10;
-	}
-	return (str);
-}
 
 int	ft_isalpha(int c) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
@@ -411,7 +386,7 @@ int main(int ac, char **av, char **envp)
 		}
 		if(line)
 		{
-			shell.tokens = parse_line(line);
+			shell.tokens = parse_line(&shell,line);
 			label_tokens(shell.tokens);
 			shell.ast = build_ast_from_tokens(shell.tokens, NULL);
 			if(shell.ast)

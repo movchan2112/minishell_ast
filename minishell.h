@@ -77,7 +77,7 @@ typedef struct s_shell
 } t_shell;
 
 
-t_token 	*parse_line(char *line);
+t_token 	*parse_line(t_shell *shell,char *line);
 t_token 	*init_token(const char *value);
 t_env 		*init_env(char **line);
 
@@ -106,14 +106,16 @@ char 		*ft_strndup(const char *s, size_t n);
 char		*ft_strchr(const char *s, int c);
 char 		*read_q(char *line);
 void		ft_putstr_fd(const char *s, int fd);
+char		*ft_itoa(int n);
+static int	ft_intlen(int n);
 
 //	build-in
 void 		find_buildin(t_shell *shell, t_cmd *cmd);
-void    	ft_env(t_shell *shell);
+int    		ft_env(t_shell *shell);
 int 		ft_echo(t_shell *shell,t_cmd *cmd);
 int			ft_pwd();
 void 		print_export(t_env *env);
-void		ft_export(t_shell *shell, t_cmd *cmd);
+int			ft_export(t_shell *shell, t_cmd *cmd);
 void 		cleanup_shell(t_shell *shell);
 int 		ft_exit(t_shell *shell);
 void		ft_unset(t_shell *shell, t_cmd *cmd);
@@ -123,5 +125,6 @@ int			ft_cd(t_shell *shell, t_cmd *cmd);
 //	cmds
 int			exec_external(t_shell *shell, t_cmd *cmd);
 char 		*find_command_path(char *cmd, t_env *envp);
+char 		*expand_vars(t_shell *shell ,const char *line);
 
 #endif

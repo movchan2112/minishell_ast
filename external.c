@@ -187,22 +187,22 @@ int exec_external(t_shell *shell, t_cmd *cmd)
         return 127;
     }
 
-	if (is_directory(full_path))
-	{
-		fprintf(stderr, "%s: Is a directory\n", full_path);
-		exit(126); // Bash uses 126 for "command found but not executable"
-	}
     pid = fork();
     if (pid == -1)
     {
-        perror("minishell: fork");
+		perror("minishell: fork");
         shell->exit_status = 1;
         return 1;
     }
-
+	
     if (pid == 0)
     {
-        // Child process
+		// Child process
+		if (is_directory(full_path))
+		{
+			fprintf(stderr, "%s: Is a directory\n", full_path);
+			exit(126); // Bash uses 126 for "command found but not executable"
+		}
         execve(full_path, cmd->args, envp);
         perror("minishell: execve failed");
         exit(1);
