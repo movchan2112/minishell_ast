@@ -216,75 +216,79 @@ char *strip_quotes(char *line)
 }
 
 
+/// ------------------------------------------------VARIABLES----------------------------------------------------- ///
+/// ------------------------------------------------VARIABLES----------------------------------------------------- ///
+/// ------------------------------------------------VARIABLES----------------------------------------------------- ///
+
+
+char *expand_vars(const char *line)
+{
+    size_t result_size = 4096;
+    char *result = calloc(result_size, 1);
+    if (!result)
+        return NULL;
+
+    size_t res_i = 0;
+
+    for (int i = 0; line[i];)
+    {
+        if (line[i] == '$' && ft_flag(line, i) != 1) // не в одинарных
+        {
+            i++; // skip $
+
+            int start = i;
+            while (isalnum(line[i]) || line[i] == '_')
+                i++;
+
+            int len = i - start;
+
+            if (len > 0)
+            {
+                char var[256] = {0};
+                strncpy(var, line + start, len);
+
+                char *value = getenv(var);
+                if (value)
+                {
+                    size_t val_len = strlen(value);
+                    if (res_i + val_len >= result_size - 1)
+                    {
+                        result_size *= 2;
+                        result = realloc(result, result_size);
+                        if (!result)
+                            return NULL;
+                    }
+                    strcpy(result + res_i, value);
+                    res_i += val_len;
+                }
+            }
+            // else: `$` with no variable — insert nothing (like bash)
+        }
+        else
+        {
+            result[res_i++] = line[i++];
+        }
+    }
+
+    result[res_i] = '\0';
+    return result;
+}
+
+
 int check_and_add_token(t_token **token_list, char *line, int start, int i)
 {
+    char *clean_token;
     char *raw_token = ft_strndup(line + start, i - start);
-    char *clean_token = strip_quotes(raw_token);
+    char *expanded_token = expand_vars(raw_token);
+    if(expanded_token)
+        clean_token = strip_quotes(expanded_token);
     if (clean_token)
         add_token_back(token_list, init_token(clean_token));
+    if(expanded_token)
+        free(expanded_token);
     free(raw_token);
     return 0; // this will change in_token to 0
 }
-
-// t_token *parse_line(char *line)
-// {
-// 	int i = 0;
-// 	int start = 0;
-// 	int in_token = 0;
-// 	t_token *token_list = NULL;
-// 	while (line[i])
-// 	{
-// 		if (ft_flag(line, i) == 0) // only care about special stuff outside quotes
-// 		{
-// 			// handle two-char operators like << >>
-// 			if (is_two_char_operator(line, i))
-// 			{
-// 				if (in_token)
-// 					in_token = check_and_add_token(&token_list, line, start, i);
-// 				char *op = ft_strndup(line + i, 2);
-// 				add_token_back(&token_list, init_token(op));
-// 				free(op);
-// 				i += 2;
-// 				continue;
-// 			}
-// 			// single-character special symbols
-// 			else if (is_special_symbol(line[i]))
-// 			{
-// 				if (in_token)
-// 					in_token = check_and_add_token(&token_list, line, start, i);
-// 				char *op = ft_strndup(line + i, 1);
-// 				add_token_back(&token_list, init_token(op));
-// 				free(op);
-// 				i++;
-// 				continue;
-// 			}
-// 			else if(ft_flag(line,i+1) != 0)
-// 			{
-
-// 			}
-// 			// space ends token
-// 			else if (line[i] == ' ' && in_token)
-// 					in_token = check_and_add_token(&token_list, line, start, i);
-
-// 			else if (line[i] != ' ' && in_token == 0)
-// 			{
-// 				in_token = 1;
-// 				start = i;
-// 			}
-// 		}
-// 		else if (in_token == 0 && line[i] != ' ')
-// 		{
-// 			in_token = 1;
-// 			start = i;
-// 		}
-// 		i++;
-// 	}
-
-// 	// Final token at end of line
-// 	if (in_token)
-// 		in_token = check_and_add_token(&token_list, line, start, i);
-// 	return token_list;
-// }
 
 
 t_token *parse_line(char *line)
@@ -353,86 +357,3 @@ t_token *parse_line(char *line)
 
     return token_list;
 }
-
-
-
-// t_token *parse_line(char *line)
-// {
-//     int i = 0;
-//     int start = 0;
-//     int in_token = 0;
-//     t_token *token_list = NULL;
-//     int quote_type = 0; // 0 = нет, 1 = ', 2 = "
-
-//     while (line[i])
-//     {
-//         // Определяем тип текущей кавычки (если есть)
-//         if (!quote_type && (line[i] == '\'' || line[i] == '"'))
-//         {
-//             quote_type = (line[i] == '\'') ? 1 : 2;
-//             if (!in_token) {
-//                 in_token = 1;
-//                 start = i;
-//             }
-//             i++;
-//             continue;
-//         }
-
-//         // Если находимся внутри кавычек
-//         if (quote_type)
-//         {
-//             // Проверяем закрывающую кавычку
-//             if ((quote_type == 1 && line[i] == '\'') || 
-//                 (quote_type == 2 && line[i] == '"'))
-//             {
-//                 quote_type = 0;
-//                 // Добавляем токен включая кавычки
-//                 check_and_add_token(&token_list, line, start, i + 1);
-//                 in_token = 0;
-//                 i++;
-//                 continue;
-//             }
-//             i++;
-//             continue;
-//         }
-
-//         // Обработка вне кавычек
-//         if (is_two_char_operator(line, i))
-//         {
-//             if (in_token)
-//                 check_and_add_token(&token_list, line, start, i);
-//             add_token_back(&token_list, init_token(ft_strndup(line + i, 2)));
-//             i += 2;
-//             in_token = 0;
-//             continue;
-//         }
-//         else if (is_special_symbol(line[i]))
-//         {
-//             if (in_token)
-//                 check_and_add_token(&token_list, line, start, i);
-//             add_token_back(&token_list, init_token(ft_strndup(line + i, 1)));
-//             i++;
-//             in_token = 0;
-//             continue;
-//         }
-//         else if (line[i] == ' ')
-//         {
-//             if (in_token)
-//                 check_and_add_token(&token_list, line, start, i);
-//             in_token = 0;
-//             i++;
-//             continue;
-//         }
-//         else if (!in_token)
-//         {
-//             in_token = 1;
-//             start = i;
-//         }
-//         i++;
-//     }
-
-//     if (in_token)
-//         check_and_add_token(&token_list, line, start, i);
-    
-//     return token_list;
-// }

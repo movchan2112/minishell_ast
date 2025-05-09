@@ -2,7 +2,7 @@ CC = gcc
 CFLAGS =
 LDFLAGS = -lreadline -lncurses
 
-SRCS = main.c my_strtok.c env.c cmd_cheker.c tokens.c cleaner.c build_in.c
+SRCS = main.c my_strtok.c env.c cmd_cheker.c tokens.c cleaner.c build_in.c external.c
 OBJS = $(SRCS:.c=.o)
 NAME = minishell
 

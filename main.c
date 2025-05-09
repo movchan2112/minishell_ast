@@ -25,6 +25,7 @@ int	ft_strlen(const char *str)
 		len++;
 	return (len);
 }
+
 t_ast *create_ast_node(t_node_type type)
 {
 	t_ast *node = malloc(sizeof(t_ast));
@@ -58,6 +59,7 @@ void label_tokens(t_token *tokens)
 		tokens = tokens->next;
 	}
 }
+
 void print_tokens(t_token *tokens)
 {
 	char *token_type_str[] = {
@@ -191,6 +193,7 @@ void print_cmd(t_cmd *cmd)
 	if (cmd->heredoc)
 		printf("Heredoc: %s\n", cmd->heredoc);
 }
+
 void print_ast(t_ast *node, int level)
 {
 	if (!node)
@@ -223,6 +226,7 @@ void	ft_putstr(const char *s) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	while (*s)
 		write(1, s++, 1);
 }
+
 void ft_putstr_fd(const char *s, int fd)
 {
     if (!s || fd < 0)
@@ -271,12 +275,13 @@ int exec_tree(t_shell *shell,t_ast *ast)
 
 		if (buildin_checker(ast->cmd->cmd))
 			find_buildin(shell,ast->cmd);
-		// else
-		// 	exec_external(shell, ast->cmd); // если реализовано
+		else
+			exec_external(shell, ast->cmd);
 	}
 
 	return 0;
 }
+
 static int	ft_intlen(int n)
 {
 	int	len = (n <= 0) ? 1 : 0;
@@ -288,24 +293,6 @@ static int	ft_intlen(int n)
 	}
 	return (len);
 }
-// char *str_append(char *s1, const char *s2, int free_s1)
-// {
-// 	char *res;
-// 	int len1 = ft_strlen(s1);
-// 	int len2 = ft_strlen(s2);
-
-// 	res = malloc(len1 + len2 + 1);
-// 	if (!res)
-// 		return NULL;
-
-// 	ft_strcpy(res, s1);
-// 	ft_strcpy(res + len1, s2);
-
-// 	if (free_s1)
-// 		free(s1);
-// 	return res;
-// }
-
 
 char	*ft_itoa(int n) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
@@ -333,17 +320,18 @@ char	*ft_itoa(int n) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 	}
 	return (str);
 }
+
 int	ft_isalpha(int c) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
 	return ((c >= 'A' && c <= 'Z') || (c >= 'a' && c <= 'z'));
 }
+
 int	ft_isalnum(int c) //libft!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 {
 	return ((c >= 'A' && c <= 'Z') || 
 	        (c >= 'a' && c <= 'z') || 
 	        (c >= '0' && c <= '9'));
 }
-
 
 char *preprocess_line(const char *line, t_shell *shell)
 {
@@ -400,6 +388,9 @@ char *preprocess_line(const char *line, t_shell *shell)
 }
 
 
+
+
+
 int main(int ac, char **av, char **envp)
 {
 	char *line = NULL;
@@ -414,7 +405,10 @@ int main(int ac, char **av, char **envp)
 		if (!line)
 			break;
 		if(ft_flag(line, strlen(line)))
+		{
+			free(line);
 			line = read_q(line);
+		}
 		if(line)
 		{
 			shell.tokens = parse_line(line);

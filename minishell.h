@@ -1,6 +1,8 @@
 #ifndef MINISHELL_H
 #define MINISHELL_H
 
+#include <sys/stat.h>
+#include <sys/wait.h>
 #include <fcntl.h>
 #include <string.h>
 #include <stdio.h>
@@ -89,14 +91,14 @@ int			ft_flag(const char *line, int pos);
 int 		ft_strcmp(const char *s1, const char *s2);
 int 		buildin_checker(char *cmd);
 
-//env
+//	env
 void 		add_env_node(t_env **env_list, const char *key, const char *value);
 t_env 		*new_env_node(const char *key, const char *value);
 t_env 		*find_env_key(t_env *env, const char *key);
 void		ft_free_env(t_env *env);
 
 
-//standart
+//	standart
 void		ft_putstr(const char *s);
 char 		*str_append(const char *s1, const char *s2, int add_newline);
 char		*ft_strdup(const char *s);
@@ -105,10 +107,9 @@ char		*ft_strchr(const char *s, int c);
 char 		*read_q(char *line);
 void		ft_putstr_fd(const char *s, int fd);
 
-//build-in
+//	build-in
 void 		find_buildin(t_shell *shell, t_cmd *cmd);
 void    	ft_env(t_shell *shell);
-// int 		ft_echo(t_cmd *cmd);
 int 		ft_echo(t_shell *shell,t_cmd *cmd);
 int			ft_pwd();
 void 		print_export(t_env *env);
@@ -118,4 +119,9 @@ int 		ft_exit(t_shell *shell);
 void		ft_unset(t_shell *shell, t_cmd *cmd);
 void 		change_env_value(t_env *env, const char *key, const char *value);
 int			ft_cd(t_shell *shell, t_cmd *cmd);
+
+//	cmds
+int			exec_external(t_shell *shell, t_cmd *cmd);
+char 		*find_command_path(char *cmd, t_env *envp);
+
 #endif

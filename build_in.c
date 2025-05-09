@@ -15,11 +15,14 @@ int ft_echo(t_shell *shell, t_cmd *cmd)
     // Print remaining arguments
     while (cmd->args[n])
     {
-        ft_putstr_fd(cmd->args[n], STDOUT_FILENO);
-        if (cmd->args[n + 1])
-            ft_putstr_fd(" ", STDOUT_FILENO);
-        n++;
-    }
+		if(cmd->args[n][0] != '\0')
+		{
+			ft_putstr_fd(cmd->args[n], STDOUT_FILENO);
+			if (cmd->args[n + 1])
+				ft_putstr_fd(" ", STDOUT_FILENO);
+		}
+		n++;
+	}
 
     // Print newline unless -n was specified
     if (newline)
